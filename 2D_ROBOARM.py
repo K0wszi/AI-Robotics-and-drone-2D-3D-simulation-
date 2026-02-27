@@ -28,10 +28,17 @@ class RobotArmEnv(gym.Env):
 
 
     def _get_obs(self):
+        #end effector
+        ee_x = self.L1 * np.cos(self.q1) + self.L2 * np.cos(self.q1 + self.q2)
+        ee_y = self.L1 * np.sin(self.q1) + self.L2 * np.sin(self.q1 + self.q2)
+
+        #blad pozycjonowania
+        dx = self.target_pos[0] - ee_x
+        dy = self.target_pos[1] - ee_y
         return np.array([
             np.cos(self.q1), np.sin(self.q1),
             np.cos(self.q2), np.sin(self.q2),
-            self.target_pos[0], self.target_pos[1],
+            dx, dy,
             self.q1_dot, self.q2_dot 
         ], dtype=np.float32)
 
@@ -49,22 +56,29 @@ class RobotArmEnv(gym.Env):
         return observation, {}
     
     def step(self, action):
-        
+        #kinematyka PRZED 
+        old_x = self.L1 * np.cos(self.q1) + self.L2 * np.cos(self.q1 + self.q2)
+        old_y = self.L1 * np.sin(self.q1) + self.L2 * np.sin(self.q1 + self.q2)
+        old_dist = np.sqrt((self.target_pos[0] - old_x)**2 + (self.target_pos[1] - old_y)**2)
+        #wykonanie ruchu
         self.q1_dot, self.q2_dot = action
         self.q1 += self.q1_dot * self.dt
         self.q2 += self.q2_dot * self.dt
         #kinematyka prosta - End-Effector
-        current_x = self.L1 * np.cos(self.q1) + self.L2 * np.cos(self.q1 + self.q2)
-        current_y = self.L1 * np.sin(self.q1) + self.L2 * np.sin(self.q1 + self.q2)
-        #...........NAGRODA
-        distance = np.sqrt((self.target_pos[0] - current_x)**2 + (self.target_pos[1] -current_y)**2)
-        reward = -distance - 0.1
+        new_x = self.L1 * np.cos(self.q1) + self.L2 * np.cos(self.q1 + self.q2)
+        new_y = self.L1 * np.sin(self.q1) + self.L2 * np.sin(self.q1 + self.q2)
+        new_dist = np.sqrt((self.target_pos[0] - new_x)**2 + (self.target_pos[1] - new_y)**2)
+        #...........NAGRODA za zblizenie sie do celu
+        reward = (old_dist - new_dist) * 20.0
+        #...........KARA za niefektywne wykorzystanie dostepnego czasu
+        reward -= 0.01
         #............warunki zakończenia
-        terminated = bool(distance < 0.1)
-        truncated = False #brak limitu kroków czasowych
+        terminated = bool(new_dist < 0.1)
         if terminated:
             reward += 100
-        return self._get_obs(), reward, terminated, truncated, {"dist": distance}
+
+        truncated = False 
+        return self._get_obs(), reward, terminated, truncated, {"dist": new_dist}
     
     def render(self):
         import pygame
@@ -102,12 +116,18 @@ class RobotArmEnv(gym.Env):
 
     ##..................TRENING
 if __name__ == "__main__":
-    #instancja środowiska
     env = RobotArmEnv()
-    model = PPO("MlpPolicy", env, verbose=1)
-    #inicjalizacja modelu ppo
-    print("Inicjalizacja modelu PP0")
-    model.learn(total_timesteps=100000)
+    TRYB = "TEST"
+    if TRYB == "TRENING":
+        model = PPO("MlpPolicy", env, verbose=1)
+        print("Training starts now...")
+        model.learn(total_timesteps=150000)
+        model.save("ppo_robot_arm")
+        print("Training_model_saved")
+    else:
+        print("Loading Trainded Robot")
+        model = PPO.load("ppo_robot_arm", env=env)
+        
     print("\nTestowanie wytrenowanego agenta:")
     obs, info = env.reset()
     for i in range(10):
