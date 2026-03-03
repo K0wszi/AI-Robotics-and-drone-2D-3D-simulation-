@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<robot name="drone">
+ <link name="base_link">
+  <inertial>
+   <mass value="0.5"/>
+   <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+  </inertial>
+  <visual>
+   <geometry>
+    <box size="0.4 0.4 0.05"/>
+   </geometry>
+   <material name="dark_grey">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+   </material>
+  </visual>
+ </link>
+ <link name="motor0">
+  <inertial>
+   <mass value="0.3"/>
+   <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/>
+  </inertial>
+ </link>
+ <joint name="joint0" type="fixed">
+  <parent link="base_link"/>
+  <child link="motor0"/>
+  <origin xyz="0.2 0.2 0"/>
+ </joint>
+ <link name="motor1">
+  <inertial>
+   <mass value="0.3"/>
+   <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/>
+  </inertial>
+ </link>
+ <joint name="joint1" type="fixed">
+  <parent link="base_link"/>
+  <child link="motor1"/>
+  <origin xyz="0.2 -0.2 0"/>
+ </joint>
+ <link name="motor2">
+  <inertial>
+   <mass value="0.3"/>
+   <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/>
+  </inertial>
+ </link>
+ <joint name="joint2" type="fixed">
+  <parent link="base_link"/>
+  <child link="motor2"/>
+  <origin xyz="-0.2 0.2 0"/>
+ </joint>
+ <link name="motor3">
+  <inertial>
+   <mass value="0.3"/>
+   <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/>
+  </inertial>
+ </link>
+ <joint name="joint3" type="fixed">
+  <parent link="base_link"/>
+  <child link="motor3"/>
+  <origin xyz="-0.2 -0.2 0"/>
+ </joint>
+</robot>
